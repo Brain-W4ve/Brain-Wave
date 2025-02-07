@@ -12,6 +12,8 @@ import {
     MouseWheelZoomModifier,
     ZoomPanModifier,
     EXyDirection,
+    BoxAnnotation,
+    ECoordinateMode,
 } from "scichart";
 
 // Configure SciChart to load WebAssembly files from the public folder
@@ -48,9 +50,9 @@ const createChart = async (divElementId) => {
 
     // Fetch data from the API
     try {
-        const response = await fetch("http://localhost:5000/files/1/channels");
+        const response = await fetch("http://localhost:5000/files/6/channels");
         const data_ = await response.json();
-        const { samplingRate, data: channel1 } = data_["channels"][0];
+        const { samplingRate, attacks, data: channel1 } = data_["channels"][0];
 
         // Calculate time values
         let xValues = channel1.map((_, index) => index / samplingRate);
@@ -64,9 +66,9 @@ const createChart = async (divElementId) => {
         }
 
         // Log the data for debugging
-        console.log("Fetched Data:", data_);
-        console.log("xValues:", xValues);
-        console.log("yValues:", yValues);
+        // console.log("Fetched Data:", data_);
+        // console.log("xValues:", xValues);
+        // console.log("yValues:", yValues);
 
         // Add a line series for the data
         const lineSeries = new FastLineRenderableSeries(wasmContext, {
@@ -110,6 +112,35 @@ const createChart = async (divElementId) => {
             axisLabelStrokeThickness: 0,
             axisLabelPadding: 5,
         });
+
+        if (attacks) {
+            attacks.forEach(attack => {
+                // Find the y-values within the attack's x-range
+                const startIndex = Math.max(0, Math.floor(attack.start * samplingRate));
+                const endIndex = Math.min(yValues.length - 1, Math.ceil(attack.finish * samplingRate));
+                
+                // Extract the y-values in the range and calculate min/max
+                const yValuesInRange = yValues.slice(startIndex, endIndex + 1);
+                const minY = Math.min(...yValuesInRange);
+                const maxY = Math.max(...yValuesInRange);
+        
+                // Add a BoxAnnotation covering the peak-to-peak range
+                const attackAnnotation = new BoxAnnotation({
+                    x1: attack.start,  
+                    x2: attack.finish,
+                    y1: minY,        // Minimum y-value in the attack range
+                    y2: maxY,        // Maximum y-value in the attack range
+                    // yCoordinateMode: ECoordinateMode.DataValue,
+                    fill: "rgba(255, 0, 0, 0.4)",  // Transparent red box
+                    stroke: "red", 
+                    strokeThickness: 1,
+                    toolTipText: `${attack.name}: Peak-to-peak = ${maxY - minY}`
+                });
+        
+                sciChartSurface.annotations.add(attackAnnotation);
+            });
+        }
+        console.log(sciChartSurface.annotations)
         sciChartSurface.annotations.add(zeroLine);
     } catch (error) {
         console.error('Error fetching or processing data:', error);

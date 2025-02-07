@@ -33,19 +33,22 @@ def upload_file():
         try:
             file_content = io.BytesIO(file.read())
             data = bioread.read_file(file_content)
-            # processed_data = apply_median_filter(file_content)
             new_file_data = File_Data(filename=file.filename)
             for i, channel in enumerate(data.channels):
+                processed_data = apply_median_filter(channel.data)
                 channel_data = Channel_Data(
                     channel_number=i,
                     sampling_rate=channel.samples_per_second,
-                    data=json.dumps(channel.data.tolist())
+                    data=json.dumps(processed_data.tolist())
                 )
                 new_file_data.channels.append(channel_data)
 
             session.add(new_file_data)
             session.commit()
-            return jsonify({"success": f"File: {file.name} processed and saved successfully"}), 200
+            return jsonify({
+                "success": f"File: {file.name} processed and saved successfully",
+                "fileId": new_file_data.id
+            }), 200
 
         except Exception as e:
             session.rollback()
@@ -63,7 +66,11 @@ def get_file_channels(file_id):
                 "channelNumber": channel.channel_number,
                 "samplingRate": channel.sampling_rate,
                 "dataLength": len(json.loads(channel.data)),  # Return the length of data, not full data
-                "data": json.loads(channel.data)
+                "data": json.loads(channel.data),
+                "attacks": [
+                    {"name": "attack1", "start": 200, "finish": 205},
+                    {"name": "attack2", "start": 368, "finish": 372}
+                ]
             }
             for channel in file.channels
         ]
