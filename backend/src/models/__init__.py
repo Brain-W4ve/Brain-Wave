@@ -1,3 +1,3 @@
-from sqlalchemy.orm import declarative_base
-
-Base = declarative_base()
+from .base import Base
+from .channel_data import *
+from .file_data import *

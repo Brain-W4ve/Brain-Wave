@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom"; 
-import LoginPage from "./components/login_page.jsx";
-import AboutUs from "./components/about_us.jsx";
-import Menu from "./components/menu.jsx";
+import LoginPage from "./src/components/login_page.jsx";
+import AboutUs from "./src/components/about_us.jsx";
+import Menu from "./src/components/menu.jsx";
 
 export default function App() {
   return (
