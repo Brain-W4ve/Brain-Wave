@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from .models import *
 from sqlalchemy import create_engine
@@ -9,6 +9,8 @@ import bioread
 import json
 import os
 import io
+from statistics import mean
+import tempfile
 
 load_dotenv()
 
@@ -113,6 +115,42 @@ def get_file_channels(file_id):
         ]
 
         return jsonify({"filename": file.filename, "channels": channels})
+
+@app.route("/files/<int:file_id>/report", methods=["GET"])
+def get_report(file_id):
+    response = get_file_channels(file_id)
+    
+    if response.status_code != 200:
+        return response
+
+    data = response.get_json()
+    channels = data["channels"]
+
+    report = {
+        "filename": data["filename"],
+        "totalChannels": len(channels),
+        "averageSamplingRate": mean(channel["samplingRate"] for channel in channels),
+        "totalDataLength": sum(channel["dataLength"] for channel in channels),
+        "attacksPerChannel": [
+            {
+                "channelNumber": channel["channelNumber"],
+                "totalAttacks": len(channel["attacks"]),
+                "attackDurations": sum(attack["finish"] - attack["start"] for attack in channel["attacks"])
+            }
+            for channel in channels
+        ]
+    }
+
+    # Save report as a temporary JSON file
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".json") as temp_file:
+        json.dump(report, temp_file, indent=4)
+        temp_file_path = temp_file.name
+
+    # Send the file and remove it afterward
+    response = send_file(temp_file_path, as_attachment=True)
+    os.remove(temp_file_path)
+    return response
+
 
 if __name__ == "__main__":
     app.run(debug=True)

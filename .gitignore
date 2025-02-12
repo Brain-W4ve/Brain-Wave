@@ -90,3 +90,7 @@ yarn.lock
 *.tmp
 *.swp
 *.swo
+
+
+labeled_segments.json
+register_data/
