@@ -3,7 +3,7 @@ from models import *
 from sqlalchemy.orm import Session
 import io
 import bioread
-from app import engine
+from backend.app import engine
 from preprocessing import apply_median_filter
 import json
 from marshmallow import Schema, fields
