@@ -9,11 +9,11 @@ def encode_auth_token(user_id, secret_key) -> str:
     """
 
     try:
-        now = datetime.timezone.utc
+        now = datetime.datetime.now(datetime.timezone.utc)
         payload = {
             "exp": now + datetime.timedelta(days=0, hours=0, minutes=30),
             "iat": now,
-            "sub": user_id
+            "sub": str(user_id)
         }
 
         return jwt.encode(
@@ -33,7 +33,8 @@ def decode_auth_token(auth_token, secret_key, session) -> int | str:
     """
 
     try:
-        payload = jwt.decode(auth_token, secret_key)
+        # payload = jwt.decode(auth_token, secret_key)
+        payload = jwt.decode(auth_token, secret_key, "HS256")
         is_blacklisted_token = BLacklist_Token.check_blacklist(auth_token, session)
         if is_blacklisted_token:
             return 'Token blacklisted. Please log in again'
@@ -41,5 +42,5 @@ def decode_auth_token(auth_token, secret_key, session) -> int | str:
             return payload["sub"]
     except jwt.ExpiredSignatureError:
         return "Signature expired. Please log in again."
-    except jwt.InvalidTokenError:
+    except jwt.InvalidTokenError as e:
         return "Invalid token. Please log in again."

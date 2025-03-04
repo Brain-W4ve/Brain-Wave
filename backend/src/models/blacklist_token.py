@@ -18,4 +18,4 @@ class BLacklist_Token(Base):
 
     @staticmethod
     def check_blacklist(auth_token, session):
-        return session.query(BLacklist_Token).filter_by(token=auth_token).exists().scalar()
+        return session.query(BLacklist_Token).filter_by(token=auth_token).scalar() is not None
