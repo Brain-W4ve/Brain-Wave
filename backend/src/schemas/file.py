@@ -1,17 +1,17 @@
 from marshmallow import Schema, fields, ValidationError, validates
 from flask import request
 from enum import Enum
+from werkzeug.datastructures import FileStorage
 
 class ALLOWED_EXTENSIONS(Enum):
-    PNG = "png",
-    JPG = "jpg",
-    PDF = "pdf",
+    PNG = "png"
+    JPG = "jpg"
+    PDF = "pdf"
     TXT = "txt"
 
 ALLOWED_EXTENSIONS_SET = {e.value for e in ALLOWED_EXTENSIONS}
 
-# custom validators for FileSchema
-def validate_file_type(file):
+def validate_file_type(file: FileStorage) -> None:
     """Ensure only specific file types are allowed"""
     if "." not in file.filename:
         raise ValidationError("Invalid file format. No extension found.")
