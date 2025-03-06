@@ -16,7 +16,7 @@ class User(Base):
     password = Column(String(200), nullable=False)
 
     # Relationships
-    # files = relationship('File', backref='user', lazy=True, cascade="all, delete")
+    files = relationship('File', backref='user', lazy=True, cascade="all, delete")
     # reports = relationship('Report', backref='user', lazy=True, cascade="all, delete")
 
 
