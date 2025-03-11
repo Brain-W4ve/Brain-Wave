@@ -8,6 +8,7 @@ class ALLOWED_EXTENSIONS(Enum):
     JPG = "jpg"
     PDF = "pdf"
     TXT = "txt"
+    ACQ = "acq"
 
 ALLOWED_EXTENSIONS_SET = {e.value for e in ALLOWED_EXTENSIONS}
 
