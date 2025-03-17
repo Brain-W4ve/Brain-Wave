@@ -52,12 +52,14 @@ def login():
                 identity={"email": email, "name": user.name},  # ✅ Se agrega el nombre
                 expires_delta=timedelta(hours=1)
             )
+
             return jsonify({"access_token": access_token}), 200
 
     except Exception as e:
         print("❌ ERROR EN LOGIN:")
         traceback.print_exc()
         return jsonify({"message": "Error interno del servidor"}), 500
+
 
 # 🔹 RUTA: REGISTRO (Se mantiene igual)
 @app.route("/register", methods=["POST"])
