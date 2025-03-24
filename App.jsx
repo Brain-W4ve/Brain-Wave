@@ -1,0 +1,18 @@
+import { Routes, Route } from "react-router-dom"; 
+import LoginPage from "./components/LoginPage.jsx";
+import AboutUs from "./components/AboutUs.jsx";
+import Menu from "./components/menu.jsx";
+import Dashboard from "./components/dashboard.jsx"
+import RegisterForm from "./components/registerForm.jsx"
+
+export default function App() {
+  return (
+    <Routes> {}
+      <Route path="/" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterForm />} />
+      <Route path="/dashboard" element={<Dashboard />} />
+      <Route path="/about" element={<AboutUs />} />
+      <Route path="/menu" element={<Menu />} />   
+    </Routes>
+  );
+}
