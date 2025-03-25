@@ -13,11 +13,13 @@ def create_app():
     Base.metadata.create_all(engine)
     # app.config["DB_ENGINE"] = engine
 
-
     from .routes.auth import auth_bp
     app.register_blueprint(auth_bp)
 
     from .routes.file import file_bp
     app.register_blueprint(file_bp)
+
+    from .routes.process import process_bp
+    app.register_blueprint(process_bp)
 
     return app

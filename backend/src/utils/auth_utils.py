@@ -20,7 +20,6 @@ def encode_auth_token(user_id, secret_key) -> str:
             "iat": now,
             "sub": str(user_id)
         }
-
         return jwt.encode(
             payload,
             secret_key,
@@ -28,7 +27,7 @@ def encode_auth_token(user_id, secret_key) -> str:
         )
 
     except Exception as e:
-        return e
+        return str(e)
     
 def decode_auth_token(auth_token, secret_key, session) -> int | str:
     """

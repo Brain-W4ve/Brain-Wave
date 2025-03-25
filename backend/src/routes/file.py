@@ -6,7 +6,6 @@ from ..models import File
 from src.os_storage import minio_client, BUCKET_NAME
 from werkzeug.utils import secure_filename
 import uuid
-from io import BytesIO
 from ..schemas.file import FileMetadataSchema, FileUploadSchema
 import os
 
@@ -16,49 +15,55 @@ file_bp = Blueprint("file", __name__)
 file_upload_schema = FileUploadSchema()
 file_metadata_schema = FileMetadataSchema(many=True)
 
+
+def upload_to_minio(user_id, file_stream, filename, content_type):
+    """Uploads a file to MinIO and saves metadata in the database."""
+    object_key = f"{user_id}/{uuid.uuid4()}-{secure_filename(filename)}"
+    file_size = os.fstat(file_stream.fileno()).st_size
+
+    # Upload to MinIO
+    minio_client.put_object(
+        BUCKET_NAME,
+        object_name=object_key,
+        data=file_stream,
+        length=file_size,
+        content_type=content_type,
+        part_size=10 * 1024 * 1024  # 10MB
+    )
+
+    # Save file metadata in the database
+    with Session_Factory() as session_:
+        new_file = File(
+            filename=filename,
+            content_type=content_type,
+            object_key=object_key,
+            user_id=user_id
+        )
+        session_.add(new_file)
+        session_.commit()
+        session_.refresh(new_file)
+
+    return new_file.id, object_key 
+
 @file_bp.route("/upload", methods=["POST"])
 @token_required
 def upload_file(user_id):
-    # validate file with marshmallow
+    """Uploads a file and stores metadata."""
     if "file" not in request.files:
-        return jsonify({
-            "status": "fail",
-            "message": "No file uploaded"
-        }), 400
-    
+        return jsonify({"status": "fail", "message": "No file uploaded"}), 400
+
     file = request.files["file"]
-  
 
     file_data, error = validate_schema(file_upload_schema, {"file": file})
     if error:
         return error
 
-    filename = secure_filename(file.filename)
-    content_type = file.content_type
-    file_size = os.fstat(file.fileno()).st_size
-    object_key = f"{user_id}/{uuid.uuid4()}-{filename}"
-
-    # Upload file to minIo
-    minio_client.put_object(
-        BUCKET_NAME,
-        object_name=object_key,
-        data=file.stream,
-        length=file_size,
-        content_type=content_type,
-        part_size=10 * 1024 * 1024
-    )
-
-    # # Store metadata in DB
-    with Session_Factory() as session_:
-        new_file = File(filename=filename, content_type=content_type, object_key=object_key, user_id=user_id)
-        session_.add(new_file)
-        session_.commit()
-        session_.refresh(new_file)
+    file_id, _ = upload_to_minio(user_id, file.stream, file.filename, file.content_type)
 
     return jsonify({
-        "status": "successs",
+        "status": "success",
         "message": "File uploaded",
-        "file_id": new_file.id
+        "file_id": file_id
     }), 201
 
 @file_bp.route("/files")
@@ -74,55 +79,41 @@ def list_files(user_id):
             "files": files_data
         })
 
-""" Previous implementation, this gives us more control on auth but has more overhead on flask"""
-# @file_bp.route("/download/<int:file_id>")
-# @token_required
-# def download_files(user_id, file_id):
-#     with Session_Factory() as session_:
-#         file = session_.query(File).filter_by(id=file_id, user_id=user_id).first()
 
-#         if not file:
-#             return jsonify({
-#                 "status": "fail",
-#                 "message": "File not found",
-#             }), 404
-        
-#         # fetch file from minio
-#         response = minio_client.get_object(BUCKET_NAME, file.object_key)
-
-#         file_data = BytesIO(response.read())
-#         response.close()
-#         response.release_conn()
-
-#         return send_file(
-#             file_data,
-#             mimetype=file.content_type,
-#             as_attachment=True,
-#             download_name=file.filename
-#         )
-
-"""We delegate the download to minio, following best practices"""
-@file_bp.route("/download/<int:file_id>")
-@token_required
-def download_file(user_id, file_id):
+def get_download_url(user_id, file_id):
+    # Retrieve the file from the database
     with Session_Factory() as session_:
         file = session_.query(File).filter_by(id=file_id, user_id=user_id).first()
 
         if not file:
             return jsonify({
                 "status": "fail",
-                "messsage": "File not found"
+                "message": "File not found"
             }), 404
         
+        # Generate presigned URL from MinIO
         download_url = minio_client.presigned_get_object(
             BUCKET_NAME, 
             file.object_key,
             response_headers={
                 "response-content-disposition": f'attachment; filename="{file.filename}"'
-            }    
+            }
         )
 
-        return jsonify({
-            "status": "success",
-            "download_url": download_url
-        })
+    return download_url
+
+"""We delegate the download to minio, following best practices"""
+@file_bp.route("/download/<int:file_id>")
+@token_required
+def download_file(user_id, file_id):
+    # Get the download URL using the utility function
+    download_url = get_download_url(user_id, file_id)
+
+    # Return the download URL
+    if isinstance(download_url, tuple):  # Check if it's an error response (tuple contains status and message)
+        return download_url  # Return the error response directly
+
+    return jsonify({
+        "status": "success",
+        "download_url": download_url
+    })
