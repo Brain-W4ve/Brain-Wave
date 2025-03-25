@@ -1,7 +1,25 @@
 version: '3.8'
 
 services:
-  # 📌 MinIO (Almacenamiento de objetos)
+  backend:
+    build:
+      context: ./backend  # Set the build context to the backend directory
+      dockerfile: Dockerfile  # Specify the Dockerfile within the backend directory
+    container_name: backend-container
+    ports:
+      - "5000:5000"
+    environment:
+      # DATABASE_URL: postgresql://user:password@database:5432/mydb
+      # FLASK_APP: src.app
+      # FLASK_ENV: development
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    depends_on:
+      - minio
+    networks:
+      - brain-wave-network
+  
   minio:
     image: quay.io/minio/minio
     container_name: minio
@@ -14,44 +32,9 @@ services:
     command: server /data --console-address ":9001"
     volumes:
       - ./data:/data  # Use a bind mount to store data in ./data on your host
+    networks:
+      - brain-wave-network
 
-  # 📌 PostgreSQL (Base de Datos)
-  database:
-    image: postgres:15
-    container_name: postgres_db
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: mydb
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-
-  # 📌 Backend (Flask + Alembic + PostgreSQL)
-  backend:
-    build: ./backend
-    container_name: backend
-    ports:
-      - "5000:5000"
-    depends_on:
-      - database
-      - minio
-    environment:
-      DATABASE_URL: postgresql://user:password@database:5432/mydb
-      MINIO_ENDPOINT: http://minio:9000
-      MINIO_ACCESS_KEY: minioadmin
-      MINIO_SECRET_KEY: minioadmin
-    command: ["sh", "-c", "sleep 5 && alembic upgrade head && python app.py"]
-
-  # 📌 Frontend (React + SChart)
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-
-volumes:
-  postgres_data:
+networks:
+  brain-wave-network:
+    driver: bridge
