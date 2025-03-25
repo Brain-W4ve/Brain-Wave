@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package modelmanager;
+
+// Request message for model processing
+message ProcessRequest {
+    string model_name = 1;
+    string download_url = 2;
+    string output_object_key = 3;  // Corrected field definition
+}
+
+message ProcessResponse {
+    string status = 1;
+    string message = 2;
+    string object_key = 3;
+}
+
+// Service definition for ModelManager
+service ModelManager {
+    rpc ProcessFile(ProcessRequest) returns (ProcessResponse);  // Corrected the syntax
+}
