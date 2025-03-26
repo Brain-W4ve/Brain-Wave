@@ -32,23 +32,15 @@ def process_file(user_id, file_id):
         object_key = f"{user_id}/{uuid.uuid4()}-processed.json"
         processed_filename = object_key.split("/")[-1]
 
-        # Download the file from MinIO
-        file_stream = minio_client.get_object(BUCKET_NAME, file.object_key)
-        temp_file = tempfile.NamedTemporaryFile(delete=False)
-        with open(temp_file.name, "wb") as temp_f:
-            for data in file_stream.stream(32 * 1024):  # 32 KB chunks
-                temp_f.write(data)
-        
-        # Create gRPC request with the file data
-        with open(temp_file.name, "rb") as file_to_process:
-            grpc_request = model_manager_pb2.ProcessRequest(
-                model_name=model_name,
-                file_data=file_to_process.read(),  # Send file content for processing
-                output_object_key=object_key
-            )
+        # Create gRPC request with the object_key
+        grpc_request = model_manager_pb2.ProcessRequest(
+            model_name=model_name,
+            object_key=file.object_key,  # Send the object_key for processing
+            output_object_key=object_key
+        )
 
-            # Call gRPC service
-            grpc_response = stub.ProcessFile(grpc_request)
+        # Call gRPC service
+        grpc_response = stub.ProcessFile(grpc_request)
 
         if grpc_response.status != "success":
             return jsonify({"status": "fail", "message": grpc_response.message}), 500

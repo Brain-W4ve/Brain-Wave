@@ -7,7 +7,6 @@ from model_factory import model_factory
 from os_storage import minio_client, BUCKET_NAME
 import tempfile
 from pathlib import Path
-import requests
 import os
 import mimetypes
 
