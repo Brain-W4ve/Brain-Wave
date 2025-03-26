@@ -15,31 +15,48 @@ export default function Menu() {
       alert("Por favor, selecciona un archivo primero.");
       return;
     }
-
+  
     setIsLoading(true);
     setChannelsData(null);
-
+  
     try {
+      const token = localStorage.getItem("token"); // Obtiene el token almacenado
+  
+      if (!token) {
+        alert("No estás autenticado. Inicia sesión nuevamente.");
+        return;
+      }else{
+        alert(token)
+      }
+  
       const formData = new FormData();
       formData.append("file", selectedFile);
-
+  
       const uploadResponse = await fetch("http://localhost:5000/upload", {
         method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`, // Enviar el token en la cabecera
+        },
         body: formData,
       });
-
+  
       if (!uploadResponse.ok) {
         throw new Error("Error al subir el archivo.");
       }
-
+  
       const uploadResult = await uploadResponse.json();
       const fileId = uploadResult.fileId;
-
-      const channelsResponse = await fetch(`http://localhost:5000/files/${fileId}/channels`);
+  
+      const channelsResponse = await fetch(`http://localhost:5000/files/${fileId}/channels`, {
+        headers: {
+          Authorization: `Bearer ${token}`, // También enviar el token en esta solicitud
+        },
+      });
+  
       if (!channelsResponse.ok) {
         throw new Error("Error al obtener datos de los canales.");
       }
-
+  
       const channelsData = await channelsResponse.json();
       setChannelsData(channelsData);
     } catch (error) {
