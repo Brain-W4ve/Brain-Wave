@@ -1,8 +1,10 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const RegisterForm = () => {
   const [formData, setFormData] = useState({ username: "", email: "", password: "" });
   const [message, setMessage] = useState("");
+  const navigate = useNavigate();
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -19,7 +21,9 @@ const RegisterForm = () => {
 
       const data = await response.json();
       if (response.ok) {
-        setMessage("Registro exitoso. Token: " + data.auth_token);
+        setMessage("Registro exitoso.");
+        navigate("/");
+
       } else {
         setMessage(data.message || "Error en el registro");
       }
