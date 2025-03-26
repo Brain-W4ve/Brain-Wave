@@ -4,8 +4,7 @@ import numpy as np
 import json 
 from pathlib import Path
 
-class U_Net:   
-        
+class U_Net:
     def process(self, acq_file: Path) -> str:
         try:
             data = bioread.read(acq_file)
@@ -37,11 +36,14 @@ class U_Net:
                 ]
             }
 
+            # Ensure the directory exists where the processed file will be saved
             processed_file = f"processed-{acq_file.name}"
-            with open(processed_file, "w") as file:
+            processed_file_path = Path(processed_file)
+
+            with open(processed_file_path, "w") as file:
                 json.dump(response, file)
-            
-            return processed_file
+
+            return str(processed_file_path)
 
         except Exception as e:
             print(f"Error processing EEG file: {e}")

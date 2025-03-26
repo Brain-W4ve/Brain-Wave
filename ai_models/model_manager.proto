@@ -5,7 +5,7 @@ package modelmanager;
 // Request message for model processing
 message ProcessRequest {
     string model_name = 1;
-    string download_url = 2;
+    string object_key = 2;
     string output_object_key = 3;  // Corrected field definition
 }
 
