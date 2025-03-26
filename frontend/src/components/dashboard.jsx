@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchFiles = async () => {
@@ -50,7 +52,7 @@ export default function Dashboard() {
   };
 
   const handleMenuRedirect = () => {
-    window.location.href = "/menu";
+    navigate("/menu");
   };
 
   return (
