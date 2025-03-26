@@ -43,7 +43,7 @@ def upload_to_minio(user_id, file_stream, filename, content_type):
         session_.commit()
         session_.refresh(new_file)
 
-    return new_file.id, object_key 
+    return new_file, object_key 
 
 @file_bp.route("/upload", methods=["POST"])
 @token_required
@@ -58,12 +58,13 @@ def upload_file(user_id):
     if error:
         return error
 
-    file_id, _ = upload_to_minio(user_id, file.stream, file.filename, file.content_type)
+    new_file, _ = upload_to_minio(user_id, file.stream, file.filename, file.content_type)
 
     return jsonify({
         "status": "success",
         "message": "File uploaded",
-        "file_id": file_id
+        "file_id": new_file.id,
+        "object_key": new_file.object_key
     }), 201
 
 @file_bp.route("/files")
@@ -80,8 +81,12 @@ def list_files(user_id):
         })
 
 
-def get_download_url(user_id, file_id):
-    # Retrieve the file from the database
+@file_bp.route("/download/<int:file_id>")
+@token_required
+def download_file(user_id, file_id):
+    """Fetches a file from MinIO and returns it as a response."""
+    
+    # Retrieve the file metadata from the database
     with Session_Factory() as session_:
         file = session_.query(File).filter_by(id=file_id, user_id=user_id).first()
 
@@ -90,30 +95,20 @@ def get_download_url(user_id, file_id):
                 "status": "fail",
                 "message": "File not found"
             }), 404
-        
-        # Generate presigned URL from MinIO
-        download_url = minio_client.presigned_get_object(
-            BUCKET_NAME, 
-            file.object_key,
-            response_headers={
-                "response-content-disposition": f'attachment; filename="{file.filename}"'
-            }
+
+        # Fetch the file from MinIO
+        try:
+            file_stream = minio_client.get_object(BUCKET_NAME, file.object_key)
+        except Exception as e:
+            return jsonify({
+                "status": "fail",
+                "message": f"Failed to fetch the file from MinIO: {str(e)}"
+            }), 500
+
+        # Send the file as a response to the user
+        return send_file(
+            file_stream, 
+            as_attachment=True, 
+            download_name=file.filename,  # Use 'download_name' instead of 'attachment_filename'
+            mimetype=file.content_type
         )
-
-    return download_url
-
-"""We delegate the download to minio, following best practices"""
-@file_bp.route("/download/<int:file_id>")
-@token_required
-def download_file(user_id, file_id):
-    # Get the download URL using the utility function
-    download_url = get_download_url(user_id, file_id)
-
-    # Return the download URL
-    if isinstance(download_url, tuple):  # Check if it's an error response (tuple contains status and message)
-        return download_url  # Return the error response directly
-
-    return jsonify({
-        "status": "success",
-        "download_url": download_url
-    })

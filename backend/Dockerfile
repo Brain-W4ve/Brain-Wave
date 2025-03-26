@@ -3,16 +3,12 @@ FROM python:latest
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-# COPY ./src /app/src
-COPY . /app
-# COPY ./migrations /app/migrations
-# COPY .env /app/.env
-# COPY ./alembic.ini /app/alembic.ini
-# COPY ./requirements.txt /app/requirements.txt
-
-# Install any dependencies in requirements.txt
+# Copy and install dependencies first (to cache them)
+COPY requirements.txt /app/
 RUN pip install --no-cache-dir -r requirements.txt
+
+# Now copy the rest of the app
+COPY . /app
 
 # Expose the port Flask will run on
 EXPOSE 5000

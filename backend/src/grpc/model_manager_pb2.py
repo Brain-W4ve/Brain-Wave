@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13model_manager.proto\x12\x0cmodelmanager\"U\n\x0eProcessRequest\x12\x12\n\nmodel_name\x18\x01 \x01(\t\x12\x14\n\x0c\x64ownload_url\x18\x02 \x01(\t\x12\x19\n\x11output_object_key\x18\x03 \x01(\t\"F\n\x0fProcessResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x12\n\nobject_key\x18\x03 \x01(\t2Z\n\x0cModelManager\x12J\n\x0bProcessFile\x12\x1c.modelmanager.ProcessRequest\x1a\x1d.modelmanager.ProcessResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x13model_manager.proto\x12\x0cmodelmanager\"S\n\x0eProcessRequest\x12\x12\n\nmodel_name\x18\x01 \x01(\t\x12\x12\n\nobject_key\x18\x02 \x01(\t\x12\x19\n\x11output_object_key\x18\x03 \x01(\t\"F\n\x0fProcessResponse\x12\x0e\n\x06status\x18\x01 \x01(\t\x12\x0f\n\x07message\x18\x02 \x01(\t\x12\x12\n\nobject_key\x18\x03 \x01(\t2Z\n\x0cModelManager\x12J\n\x0bProcessFile\x12\x1c.modelmanager.ProcessRequest\x1a\x1d.modelmanager.ProcessResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -32,9 +32,9 @@ _builder.BuildTopDescriptorsAndMessages(DESCRIPTOR, 'model_manager_pb2', _global
 if not _descriptor._USE_C_DESCRIPTORS:
   DESCRIPTOR._loaded_options = None
   _globals['_PROCESSREQUEST']._serialized_start=37
-  _globals['_PROCESSREQUEST']._serialized_end=122
-  _globals['_PROCESSRESPONSE']._serialized_start=124
-  _globals['_PROCESSRESPONSE']._serialized_end=194
-  _globals['_MODELMANAGER']._serialized_start=196
-  _globals['_MODELMANAGER']._serialized_end=286
+  _globals['_PROCESSREQUEST']._serialized_end=120
+  _globals['_PROCESSRESPONSE']._serialized_start=122
+  _globals['_PROCESSRESPONSE']._serialized_end=192
+  _globals['_MODELMANAGER']._serialized_start=194
+  _globals['_MODELMANAGER']._serialized_end=284
 # @@protoc_insertion_point(module_scope)

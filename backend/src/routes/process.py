@@ -1,11 +1,12 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from src.utils.auth_utils import token_required
-from src.routes.file import get_download_url, upload_to_minio
+from src.os_storage import minio_client, BUCKET_NAME
 from src.grpc import model_manager_pb2
 from src.grpc_service import stub
 from src.db import Session_Factory
 from ..models import File
 import uuid
+import tempfile
 
 process_bp = Blueprint("process", __name__)
 
@@ -21,24 +22,33 @@ def process_file(user_id, file_id):
         if not model_name:
             return jsonify({"status": "fail", "message": "Model name is required"}), 400
 
-        # Get the original file's download URL
-        download_url = get_download_url(user_id, file_id)
-        if isinstance(download_url, tuple):  # Handle errors
-            return download_url
+        # Get the file metadata from the database
+        with Session_Factory() as session_:
+            file = session_.query(File).get(file_id)
+            if not file:
+                return jsonify({"status": "fail", "message": "File not found"}), 404
 
         # Generate a unique output key for the processed file
         object_key = f"{user_id}/{uuid.uuid4()}-processed.json"
         processed_filename = object_key.split("/")[-1]
 
-        # Create gRPC request
-        grpc_request = model_manager_pb2.ProcessRequest(
-            model_name=model_name,
-            download_url=download_url,
-            output_object_key=object_key
-        )
+        # Download the file from MinIO
+        file_stream = minio_client.get_object(BUCKET_NAME, file.object_key)
+        temp_file = tempfile.NamedTemporaryFile(delete=False)
+        with open(temp_file.name, "wb") as temp_f:
+            for data in file_stream.stream(32 * 1024):  # 32 KB chunks
+                temp_f.write(data)
+        
+        # Create gRPC request with the file data
+        with open(temp_file.name, "rb") as file_to_process:
+            grpc_request = model_manager_pb2.ProcessRequest(
+                model_name=model_name,
+                file_data=file_to_process.read(),  # Send file content for processing
+                output_object_key=object_key
+            )
 
-        # Call gRPC service
-        grpc_response = stub.ProcessFile(grpc_request)
+            # Call gRPC service
+            grpc_response = stub.ProcessFile(grpc_request)
 
         if grpc_response.status != "success":
             return jsonify({"status": "fail", "message": grpc_response.message}), 500
@@ -47,7 +57,7 @@ def process_file(user_id, file_id):
         with Session_Factory() as session_:
             processed_file = File(
                 filename=processed_filename,
-                content_type="application/octet-stream",
+                content_type="application/json",  # Adjust based on your actual file type
                 object_key=object_key,
                 user_id=user_id
             )
@@ -55,13 +65,16 @@ def process_file(user_id, file_id):
             session_.commit()
             session_.refresh(processed_file)
 
-        # Return the processed file metadata with MinIO download URL
-        return jsonify({
-            "status": "success",
-            "message": "File processed successfully",
-            "file_id": processed_file.id,
-            "download_url": get_download_url(user_id, processed_file.id)
-        })
+        # Fetch the processed file from MinIO
+        processed_file_stream = minio_client.get_object(BUCKET_NAME, processed_file.object_key)
+
+        # Send the processed file to the user
+        return send_file(
+            processed_file_stream,
+            as_attachment=True,
+            download_name=processed_filename,  # Filename for the download
+            mimetype="application/json"  # You can adjust the MIME type accordingly
+        )
 
     except Exception as e:
         return jsonify({"status": "fail", "message": f"Processing error: {str(e)}"}), 500
