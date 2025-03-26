@@ -21,6 +21,26 @@ services:
       - minio
     networks:
       - brain-wave-network
+
+  
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+  
+  ai_models:
+    build:
+      context: ./ai_models
+      dockerfile: Dockerfile
+    ports:
+      - "5000:5000"
+    depends_on:
+      - backend
+    
   
   minio:
     image: quay.io/minio/minio
