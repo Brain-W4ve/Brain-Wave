@@ -1,3 +1,5 @@
 ./backend/register_data
 __pycache__/
 *.db
+node_modules/
+build/

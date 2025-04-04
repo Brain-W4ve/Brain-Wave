@@ -47,8 +47,25 @@ export default function Dashboard() {
     }
   };
 
-  const handleProcess = (fileId) => {
-    window.location.href = `/scichart/${fileId}`;
+  const handleProcess = async (fileId) => {
+    const token = localStorage.getItem("token");
+    const response = await fetch(`http://localhost:5000/process/${fileId}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ model: "demo" }),
+    });
+    
+    if (!response.ok){
+      throw new Error("Failed to fetch JSON file")
+    }
+    const blob = await response.blob();
+    const text = await blob.text();
+    const data = JSON.parse(text);
+    console.log(data);
+    navigate("/visualizer", {state: {data}});
   };
 
   const handleMenuRedirect = () => {
