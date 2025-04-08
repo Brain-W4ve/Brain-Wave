@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import rest_client from "../utils/rest_client";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -11,36 +12,43 @@ const LoginForm = () => {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/login", {
+      const response = await rest_client.request({
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        url: "/login",
+        data: { email, password },
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        localStorage.setItem("token", data.auth_token);
+      if (response.auth_token) {
+        localStorage.setItem("token", response.auth_token);
         navigate("/dashboard");
       } else {
-        alert(data.message || "Error en inicio de sesión");
+        alert("Token no recibido.");
       }
     } catch (error) {
-      console.error("Error en la autenticación:", error);
-      alert("Error de conexión con el servidor");
+      console.error("Error en autenticación:", error);
+      alert(error.response?.data?.message || "Error en inicio de sesión");
     }
   };
 
   return (
     <div className="min-vh-100 d-flex align-items-center justify-content-center bg-light">
-      <div className="card p-4 shadow-lg border-0" style={{ maxWidth: "400px", borderRadius: "15px", backgroundColor: "#f0f9ff" }}>
+      <div
+        className="card p-4 shadow-lg border-0"
+        style={{
+          maxWidth: "400px",
+          borderRadius: "15px",
+          backgroundColor: "#f0f9ff",
+        }}
+      >
         <div className="text-center mb-4">
           <h1 className="display-6 fw-bold text-primary">BrainWave</h1>
           <p className="text-muted">Conectando mentes, transformando ideas</p>
         </div>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label htmlFor="email" className="form-label">Correo electrónico</label>
+            <label htmlFor="email" className="form-label">
+              Correo electrónico
+            </label>
             <input
               type="email"
               id="email"
@@ -52,7 +60,9 @@ const LoginForm = () => {
             />
           </div>
           <div className="mb-3">
-            <label htmlFor="password" className="form-label">Contraseña</label>
+            <label htmlFor="password" className="form-label">
+              Contraseña
+            </label>
             <input
               type="password"
               id="password"
@@ -63,11 +73,20 @@ const LoginForm = () => {
               required
             />
           </div>
-          <button type="submit" className="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm">
+          <button
+            type="submit"
+            className="btn btn-primary w-100 py-2 fw-bold rounded-pill shadow-sm"
+          >
             Iniciar sesión
           </button>
           <div className="text-center mt-3">
-            <button className="btn btn-link text-primary fw-bold" onClick={() => navigate("/register")}>¿No tienes cuenta? Regístrate</button>
+            <button
+              className="btn btn-link text-primary fw-bold"
+              type="button"
+              onClick={() => navigate("/register")}
+            >
+              ¿No tienes cuenta? Regístrate
+            </button>
           </div>
         </form>
       </div>
