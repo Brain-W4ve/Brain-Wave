@@ -35,8 +35,8 @@ class ApiClient {
     delete this.axiosInstance.defaults.headers.common["Authorization"];
   }
 
-  // Generic request method
   async request(method, url, data = null, config = {}) {
+    console.log("")
     try {
       const response = await this.axiosInstance.request({
         method,
@@ -44,7 +44,7 @@ class ApiClient {
         data,
         ...config,
       });
-      return response.data;
+      return await response.data;
     } catch (error) {
       console.error("API Error:", error);
       throw error.response?.data || error;

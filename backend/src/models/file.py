@@ -15,6 +15,4 @@ class File(Base):
     user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
     user = relationship("User", back_populates="files")
-
-
-    # reports = relationship('')
+    processed_files = relationship("ProcessedFile", back_populates="original_file")

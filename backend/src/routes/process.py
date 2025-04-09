@@ -4,9 +4,9 @@ from src.os_storage import minio_client, BUCKET_NAME
 from src.grpc import model_manager_pb2
 from src.grpc_service import stub
 from src.db import Session_Factory
-from ..models import File
+from ..models import File, ProcessedFile
 import uuid
-import tempfile
+from datetime import datetime, timezone
 
 process_bp = Blueprint("process", __name__)
 
@@ -28,14 +28,14 @@ def process_file(user_id, file_id):
             if not file:
                 return jsonify({"status": "fail", "message": "File not found"}), 404
 
-        # Generate a unique output key for the processed file
+        # Generate unique output key and filename
         object_key = f"{user_id}/{uuid.uuid4()}-processed.json"
         processed_filename = object_key.split("/")[-1]
 
-        # Create gRPC request with the object_key
+        # Create gRPC request
         grpc_request = model_manager_pb2.ProcessRequest(
             model_name=model_name,
-            object_key=file.object_key,  # Send the object_key for processing
+            object_key=file.object_key,
             output_object_key=object_key
         )
 
@@ -45,27 +45,26 @@ def process_file(user_id, file_id):
         if grpc_response.status != "success":
             return jsonify({"status": "fail", "message": grpc_response.message}), 500
 
-        # Store the processed file metadata in the database (without re-uploading)
+        # Save metadata of the processed file (but not the model metadata itself)
         with Session_Factory() as session_:
-            processed_file = File(
-                filename=processed_filename,
-                content_type="application/json",  # Adjust based on your actual file type
-                object_key=object_key,
-                user_id=user_id
+            processed_file_entry = ProcessedFile(
+                original_file_id=file.id,
+                processed_filename=processed_filename,
+                processing_method=model_name,
+                processed_date=datetime.now(timezone.utc)
             )
-            session_.add(processed_file)
+            session_.add(processed_file_entry)
             session_.commit()
-            session_.refresh(processed_file)
 
-        # Fetch the processed file from MinIO
-        processed_file_stream = minio_client.get_object(BUCKET_NAME, processed_file.object_key)
+        # Fetch processed file from storage
+        processed_file_stream = minio_client.get_object(BUCKET_NAME, object_key)
 
-        # Send the processed file to the user
+        # Send file to client
         return send_file(
             processed_file_stream,
             as_attachment=True,
-            download_name=processed_filename,  # Filename for the download
-            mimetype="application/json"  # You can adjust the MIME type accordingly
+            download_name=processed_filename,
+            mimetype="application/json"
         )
 
     except Exception as e:

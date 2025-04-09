@@ -1,7 +1,7 @@
 import { Routes, Route } from "react-router-dom"; 
 import LoginPage from "./components/LoginPage.jsx";
 import AboutUs from "./components/AboutUs.jsx";
-import Dashboard from "./components/dashboard.jsx"
+import Dashboard from "./components/Dashboard.jsx";
 import Register from "./components/RegisterForm.jsx"
 import Menu from "./components/Menu.jsx";
 import Visualizer from "./components/Visualizer.jsx";

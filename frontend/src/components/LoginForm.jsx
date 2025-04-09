@@ -12,11 +12,11 @@ const LoginForm = () => {
     e.preventDefault();
 
     try {
-      const response = await rest_client.request({
-        method: "POST",
-        url: "/login",
-        data: { email, password },
-      });
+      const response = await rest_client.request(
+        "POST",
+        "/login",
+        { email, password }
+      );
 
       if (response.auth_token) {
         localStorage.setItem("token", response.auth_token);
@@ -42,7 +42,7 @@ const LoginForm = () => {
       >
         <div className="text-center mb-4">
           <h1 className="display-6 fw-bold text-primary">BrainWave</h1>
-          <p className="text-muted">Conectando mentes, transformando ideas</p>
+          {/* <p className="text-muted">Conectando mentes, transformando ideas</p> */}
         </div>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">

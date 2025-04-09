@@ -10,7 +10,7 @@ def create_app():
     CORS(app)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
-    Base.metadata.create_all(engine)
+    # Base.metadata.create_all(engine)
     # app.config["DB_ENGINE"] = engine
 
     from .routes.auth import auth_bp
