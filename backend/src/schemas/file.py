@@ -29,10 +29,22 @@ class FileUploadSchema(Schema):
     def validate_file(self, file):
         validate_file_type(file)
 
-class FileMetadataSchema(Schema):
-    """Schema for serializing file metadata"""
+class FileSummarySchema(Schema):
+    """Schema for serializing file metadata summary"""
+    id = fields.Int(required=True)
+    filename = fields.Str(required=True)
+    file_info_url = fields.Method("get_info_url")
+
+    def get_info_url(self, obj):
+        return f"http://backend:5000/file/{obj.id}"
+
+class FileDetailSchema(Schema):
     id = fields.Int(required=True)
     filename = fields.Str(required=True)
     content_type = fields.Str(required=True)
-    download_url = fields.Str(required=True)
-    uploaded_at = fields.DateTime(required=True)
+    upload_date = fields.Str(required=True)
+#     uploaded_at = fields.DateTime(attribute="upload_date", required=True)
+    download_url = fields.Method("get_download_url")
+
+    def get_download_url(self, obj):
+        return f"http://backend:5000/download/{obj.id}"

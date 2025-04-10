@@ -50,7 +50,7 @@ def process_file(user_id, file_id):
             processed_file_entry = ProcessedFile(
                 original_file_id=file.id,
                 processed_filename=processed_filename,
-                processing_method=model_name,
+                model_id=1,
                 processed_date=datetime.now(timezone.utc)
             )
             session_.add(processed_file_entry)

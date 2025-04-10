@@ -6,14 +6,21 @@ from ..models import File
 from src.os_storage import minio_client, BUCKET_NAME
 from werkzeug.utils import secure_filename
 import uuid
-from ..schemas.file import FileMetadataSchema, FileUploadSchema
+from ..schemas.file import (
+    # FileMetadataSchema, 
+    FileUploadSchema,
+    FileSummarySchema,
+    FileDetailSchema
+)
 import os
 
 file_bp = Blueprint("file", __name__)
 
 
 file_upload_schema = FileUploadSchema()
-file_metadata_schema = FileMetadataSchema(many=True)
+# file_metadata_schema = FileMetadataSchema(many=True)
+file_summary_schema = FileSummarySchema(many=True)
+file_detail_schema = FileDetailSchema()
 
 
 def upload_to_minio(user_id, file_stream, filename, content_type):
@@ -73,7 +80,7 @@ def list_files(user_id):
     with Session_Factory() as session_:
         user_files = session_.query(File).filter_by(user_id=user_id).all()
 
-        files_data = file_metadata_schema.dump(user_files)
+        files_data = file_summary_schema.dump(user_files)
 
         return jsonify({
             "status": "success",
@@ -112,3 +119,22 @@ def download_file(user_id, file_id):
             download_name=file.filename,  # Use 'download_name' instead of 'attachment_filename'
             mimetype=file.content_type
         )
+    
+@file_bp.route("/file/<int:file_id>")
+@token_required
+def get_file_info(user_id, file_id):
+    """Returns metadata for a specific file"""
+    with Session_Factory() as session_:
+        file = session_.query(File).filter_by(id=file_id, user_id=user_id).first()
+
+        if not file:
+            return jsonify({
+                "status": "fail",
+                "message": "File not found",
+            }), 404
+        
+        file_data = file_detail_schema.dump(file)
+        return jsonify({
+            "status": "success",
+            "file": file_data
+        }), 200

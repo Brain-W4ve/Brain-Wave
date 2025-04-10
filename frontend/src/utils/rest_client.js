@@ -44,7 +44,7 @@ class ApiClient {
         data,
         ...config,
       });
-      return await response.data;
+      return response;
     } catch (error) {
       console.error("API Error:", error);
       throw error.response?.data || error;

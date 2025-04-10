@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link} from "react-router-dom";
+import rest_client from "../utils/rest_client";
 
-export default function Dashboard() {
+
+function Dashboard(){
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
@@ -9,18 +11,19 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchFiles = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const response = await fetch("http://localhost:5000/files", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const data = await response.json();
-        if (data.status === "success" && Array.isArray(data.files)) {
+        const response = await rest_client.request(
+          "GET",
+          "/files",
+        );
+        
+        const data = await response.data;
+        if (data.status === "success" && Array.isArray(data.files)){
           setFiles(data.files);
         } else {
           setFiles([]);
         }
       } catch (error) {
-        console.error("Error fetching files:", error);
+        console.error("Error fetching files: ", error);
         setFiles([]);
       } finally {
         setLoading(false);
@@ -31,46 +34,59 @@ export default function Dashboard() {
 
   const handleDownload = async (fileId) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(`http://localhost:5000/download/${fileId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await response.json();
-      if (data.status === "success") {
-        window.location.href = data.download_url;
-      } else {
-        alert("Error al descargar el archivo");
+      const response = await rest_client.request(
+        "GET", 
+        `/download/${fileId}`, 
+    );
+      const contentDisposition = response.headers?.["content-disposition"];
+      let filename = "downloaded_file";
+  
+      if (contentDisposition) {
+        const match = contentDisposition.match(/filename\*?=(?:UTF-8'')?["']?([^"';\n]+)["']?/);
+        if (match && match[1]) {
+          filename = decodeURIComponent(match[1]);
+        }
       }
+  
+      const blob = new Blob([response.data], { type: response.data.type });
+  
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.setAttribute("download", filename);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     } catch (error) {
-      console.error("Error downloading file:", error);
+      console.error("Error downloading file: ", error);
       alert("Hubo un problema al descargar el archivo");
     }
   };
 
   const handleProcess = async (fileId) => {
-    const token = localStorage.getItem("token");
-    const response = await fetch(`http://localhost:5000/process/${fileId}`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ model: "demo" }),
-    });
-    
-    if (!response.ok){
-      throw new Error("Failed to fetch JSON file")
+    const response = await rest_client.request(
+      "POST",
+      `/process/${fileId}`,
+      {model: "demo"}
+    );
+
+    console.log(response);
+
+    const data = await response.data;
+
+    if (response.status === "success"){
+      const blob = await response.blob();
+      const text = await blob.text();
+      const data = JSON.parse(text);
+      navigate("/visualizer", {state: {data}})
+    } else {
+      alert(`Error al procesar el archivo: ${fileId}`);
     }
-    const blob = await response.blob();
-    const text = await blob.text();
-    const data = JSON.parse(text);
-    console.log(data);
-    navigate("/visualizer", {state: {data}});
   };
 
+  // const handleAddFileRedirect = () => {};
   const handleMenuRedirect = () => {
     navigate("/menu");
-  };
+  }
 
   return (
     <div className="container mt-5">
@@ -93,7 +109,11 @@ export default function Dashboard() {
             <tbody>
               {files.map((file) => (
                 <tr key={file.id}>
-                  <td>{file.filename}</td>
+                  <td>
+                    <Link to={`/file/${file.id}`} className="text-decoration-none text-primary">
+                      {file.filename}
+                    </Link>
+                  </td>
                   <td className="text-center">
                     <button
                       className="btn btn-outline-primary btn-sm me-2"
@@ -122,3 +142,5 @@ export default function Dashboard() {
     </div>
   );
 }
+
+export default Dashboard;

@@ -17,16 +17,17 @@ const LoginForm = () => {
         "/login",
         { email, password }
       );
+      const data = await response.data;
 
-      if (response.auth_token) {
-        localStorage.setItem("token", response.auth_token);
+      if (data.auth_token) {
+        localStorage.setItem("token", data.auth_token);
         navigate("/dashboard");
       } else {
         alert("Token no recibido.");
       }
     } catch (error) {
       console.error("Error en autenticación:", error);
-      alert(error.response?.data?.message || "Error en inicio de sesión");
+      alert("Error en inicio de sesión");
     }
   };
 

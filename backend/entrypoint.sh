@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo "Running migrations..."
+alembic upgrade head
+echo "Starting Flask dev server..."
+exec flask run --host=0.0.0.0 --port=5000 --reload

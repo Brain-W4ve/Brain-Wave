@@ -14,4 +14,8 @@ COPY . /app
 EXPOSE 5000
 
 # Command to run the migrations and start the Flask app with Gunicorn
-CMD ["sh", "-c", "sleep 5 && alembic upgrade head && gunicorn --bind 0.0.0.0:5000 src.app:app"]
+# CMD ["sh", "-c", "sleep 5 && alembic upgrade head && gunicorn --bind 0.0.0.0:5000 src.app:app"]
+
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+CMD ["/entrypoint.sh"]

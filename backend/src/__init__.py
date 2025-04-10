@@ -7,6 +7,7 @@ import os
 
 def create_app():
     app = Flask(__name__)
+    # CORS(app, expose_headers=["Content-Disposition"])
     CORS(app)
     app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
